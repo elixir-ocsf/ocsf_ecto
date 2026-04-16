@@ -167,4 +167,27 @@ defmodule OCSF.Ecto.SinkTest do
       assert Repo.aggregate(EctoEvent, :count) == 2
     end
   end
+
+  # A bare spawned process doesn't inherit the sandbox caller chain
+  # (Task.async would), so any Repo call raises
+  # DBConnection.OwnershipError. That's the closest we can get to a
+  # "Repo unavailable" signal without mocking.
+  describe "error paths" do
+    test "write/1 returns {:error, _} when the Repo raises" do
+      event = build_event()
+      parent = self()
+
+      spawn(fn -> send(parent, {:result, Sink.write([event])}) end)
+
+      assert_receive {:result, {:error, %DBConnection.OwnershipError{}}}, 1_000
+    end
+
+    test "health/0 returns {:down, reason} when the Repo raises" do
+      parent = self()
+
+      spawn(fn -> send(parent, {:result, Sink.health()}) end)
+
+      assert_receive {:result, {:down, %DBConnection.OwnershipError{}}}, 1_000
+    end
+  end
 end

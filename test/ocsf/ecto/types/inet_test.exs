@@ -3,6 +3,8 @@ defmodule OCSF.Ecto.Types.InetTest do
 
   alias OCSF.Ecto.Types.Inet
 
+  doctest OCSF.Ecto.Types.Inet
+
   describe "type/0" do
     test "maps to the Postgres :inet column type" do
       assert Inet.type() == :inet
