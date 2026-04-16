@@ -37,6 +37,26 @@ defmodule OCSF.Ecto.Sink do
     transform: []
   }
 
+  @doc """
+  Writes a batch of OCSF events to Postgres.
+
+  Each event is run through the configured `OCSF.Policy` (denied
+  classes become `nil`), projected to the flat `ocsf_event__logs`
+  row shape, and inserted via `Ecto.Repo.insert_all/3` with
+  `on_conflict: :nothing` on the `:id` column. Replaying the same
+  event UID is therefore a no-op.
+
+  Returns `:ok` when the insert succeeds (even if no new rows were
+  written due to conflict), or `{:error, exception}` on failure.
+
+  ## Examples
+
+      {:ok, event} = OCSF.Events.Authentication.logon(user: %{uid: "u1"})
+      :ok = OCSF.Ecto.Sink.write([event])
+
+      # Replay is idempotent on metadata.uid
+      :ok = OCSF.Ecto.Sink.write([event])
+  """
   @impl true
   @spec write([OCSF.Event.t()]) :: :ok | {:error, term}
   def write(events) when is_list(events) do
@@ -49,6 +69,23 @@ defmodule OCSF.Ecto.Sink do
     error -> {:error, error}
   end
 
+  @doc """
+  Projects an `%OCSF.Event{}` to the raw row map inserted by `write/1`.
+
+  Applies the sink's policy, encrypts PII via Cloak, and returns
+  the keyword-indexed map passed to `Ecto.Repo.insert_all/3`.
+  Exposed for diagnostic and test use — prefer `write/1` in
+  application code.
+
+  ## Examples
+
+      {:ok, event} = OCSF.Events.Authentication.logon(user: %{uid: "u1"})
+      row = OCSF.Ecto.Sink.row_for(event)
+      row.class_uid
+      #=> 3002
+      row.metadata__uid == event.metadata.uid
+      #=> true
+  """
   @impl true
   @spec row_for(OCSF.Event.t()) :: map
   def row_for(%OCSF.Event{} = event) do
@@ -89,13 +126,35 @@ defmodule OCSF.Ecto.Sink do
     }
   end
 
+  @doc """
+  Returns the `OCSF.Policy` applied to every write.
+
+  Resolved from `Application.get_env(:ocsf_ecto, OCSF.Ecto.Sink)`
+  at call time. Falls back to a deny-`:network`, allow-PII default
+  when no config is provided.
+
+  ## Examples
+
+      %OCSF.Policy{} = OCSF.Ecto.Sink.policy()
+  """
   @impl true
   @spec policy() :: OCSF.Policy.t()
   def policy do
-    Application.get_env(:ocsf_ecto, __MODULE__, [])
-    |> Keyword.get(:policy, @default_policy)
+    config = Application.get_env(:ocsf_ecto, __MODULE__, [])
+    Keyword.get(config, :policy, @default_policy)
   end
 
+  @doc """
+  Probes the underlying Repo and returns a sink health signal.
+
+  Issues a `SELECT 1` against Postgres. Returns `:ok` when the
+  query succeeds, or `{:down, reason}` when the Repo is unavailable
+  or raises.
+
+  ## Examples
+
+      :ok = OCSF.Ecto.Sink.health()
+  """
   @impl true
   @spec health() :: OCSF.Sink.health()
   def health do

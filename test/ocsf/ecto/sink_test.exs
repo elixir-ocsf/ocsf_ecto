@@ -80,9 +80,9 @@ defmodule OCSF.Ecto.SinkTest do
         Repo.query("SELECT user__name, user__email_addr FROM ocsf_event__logs")
 
       # Encrypted bytes should not contain the plaintext
-      assert name_bytes != nil
+      assert is_binary(name_bytes) and byte_size(name_bytes) > 0
       refute String.contains?(name_bytes, "Jane Doe")
-      assert email_bytes != nil
+      assert is_binary(email_bytes) and byte_size(email_bytes) > 0
       refute String.contains?(email_bytes, "jane@example.com")
     end
 
@@ -144,6 +144,27 @@ defmodule OCSF.Ecto.SinkTest do
   describe "health/0" do
     test "returns :ok when repo responds" do
       assert Sink.health() == :ok
+    end
+  end
+
+  describe "idempotency (ON CONFLICT DO NOTHING)" do
+    test "replaying the same event leaves a single row" do
+      event = build_event()
+
+      assert :ok = Sink.write([event])
+      assert :ok = Sink.write([event])
+
+      assert Repo.aggregate(EctoEvent, :count) == 1
+    end
+
+    test "different events with distinct metadata.uid both persist" do
+      event_a = build_event()
+      event_b = build_event()
+
+      refute event_a.metadata.uid == event_b.metadata.uid
+
+      assert :ok = Sink.write([event_a, event_b])
+      assert Repo.aggregate(EctoEvent, :count) == 2
     end
   end
 end

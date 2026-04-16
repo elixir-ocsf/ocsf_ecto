@@ -2,13 +2,40 @@ defmodule OCSF.Ecto.Event do
   @moduledoc """
   Ecto schema for the `ocsf_event__logs` Postgres table.
 
-  Represents a single OCSF event projected to flat columns using the
-  `__` naming convention (SPEC §6). PII fields (`user__name`,
-  `user__email_addr`) are encrypted at rest via
-  `OCSF.Ecto.Types.EncryptedString`.
+  Flat projection of a canonical `%OCSF.Event{}` using the `__`
+  segment separator (SPEC §6): nested paths like `metadata.product.name`
+  become single columns (`metadata__product__name`). Corresponds to
+  the OCSF
+  [Base Event](https://schema.ocsf.io/1.8.0/classes/base_event) and
+  the objects it embeds (`metadata`, `user`, `http_request`,
+  `src_endpoint`, `dst_endpoint`, `service`).
+
+  The schema itself is declarative and has no public functions —
+  writes are performed by `OCSF.Ecto.Sink.write/1` via
+  `Ecto.Repo.insert_all/3`.
+
+  ## Primary key
+
+  `:id` is a `:binary_id` seeded from the event's `metadata.uid` so
+  the OCSF event UID IS the row UID. This enables
+  `on_conflict: :nothing, conflict_target: :id` idempotent replays
+  in the sink.
+
+  ## Encrypted columns
+
+  The following columns use `OCSF.Ecto.Types.EncryptedString` and
+  are encrypted at rest via Cloak:
+
+  - `user__name` (`:contact` / `:identity` classes)
+  - `user__email_addr` (`:contact` / `:identity` classes)
+
+  ## Custom types
+
+  - `OCSF.Ecto.Types.Inet` on `src_endpoint__ip`, `dst_endpoint__ip`
+  - `OCSF.Ecto.Types.EncryptedString` on encrypted PII columns
 
   See `OCSF.Ecto.Sink` for the write path and `OCSF.Event` for the
-  canonical nested struct.
+  canonical nested struct shape.
   """
 
   use Ecto.Schema

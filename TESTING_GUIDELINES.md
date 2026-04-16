@@ -143,11 +143,19 @@ end
 
 `test/test_helper.exs` sets `Sandbox.mode(Repo, :manual)`. Each test
 module using `OCSF.Ecto.DataCase` gets a sandbox owner in `setup/1`
-that rolls back at `on_exit/1`. No manual `Repo.delete_all` needed.
+via `Sandbox.start_owner!(Repo, shared: not tags[:async])` and the
+owner is stopped in `on_exit/1`. No manual `Repo.delete_all` needed.
 
-When `async: true`, each test runs in its own transaction. When
-`async: false`, the sandbox switches to `:shared` mode so spawned
-processes can see the transaction.
+The ownership mode is chosen at `setup/1` time from the `:async`
+tag:
+
+- `async: true` — per-test private ownership, each test runs in its
+  own transaction, parallel-safe.
+- `async: false` — `shared: true` ownership, allowing processes
+  spawned by the test to see the same transaction. Tests in the
+  module run sequentially.
+
+Mode is not flipped mid-test.
 
 ### 4.2 When to go `async: false`
 
@@ -351,10 +359,21 @@ end
 
 ## 7. Test categories
 
-### 7.1 Schema / type unit tests (pure)
+### 7.1 Custom Ecto type unit tests
 
-Test custom Ecto types (`Inet`, `EncryptedString`) in isolation via
-`cast/1`, `dump/1`, `load/1` round-trips. No Repo. Always `async: true`.
+Test custom Ecto types via `cast/1`, `dump/1`, `load/1` round-trips.
+Two sub-cases:
+
+- **Pure types** (`OCSF.Ecto.Types.Inet`) — no Repo, no Vault. Use
+  `ExUnit.Case, async: true` directly.
+- **Vault-dependent types** (`OCSF.Ecto.Types.EncryptedString`) —
+  `dump/1` and `load/1` call into the running `OCSF.Ecto.Vault`
+  GenServer, so the OTP app must be started. Use
+  `OCSF.Ecto.DataCase, async: true` (the application is up during
+  the test run) or `ExUnit.Case, async: true` with an explicit
+  `start_supervised!(OCSF.Ecto.Vault)` in `setup`. Either way the
+  test is not truly pure — treat ciphertext as opaque and assert
+  on round-trip identity, not byte layout.
 
 ### 7.2 Sink round-trip tests (DB-backed)
 

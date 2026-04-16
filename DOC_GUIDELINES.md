@@ -219,18 +219,25 @@ Behaviour is configured via `Application.get_env/2` rather than opts:
 ### 4.1 Doctests (`iex>`)
 
 Use for pure functions with small, predictable output — typically
-helpers that don't touch the Repo or the Vault:
+helpers that don't touch the Repo or the Vault. A real example
+from `OCSF.Ecto.Types.Inet`:
 
 ```elixir
 @doc """
-Returns the column name for an OCSF field path.
+Casts an Erlang IP tuple to the internal representation.
 
 ## Examples
 
-    iex> OCSF.Ecto.Column.name([:metadata, :product, :name])
-    :metadata__product__name
+    iex> OCSF.Ecto.Types.Inet.cast({10, 0, 0, 1})
+    {:ok, {10, 0, 0, 1}}
+
+    iex> OCSF.Ecto.Types.Inet.cast(nil)
+    {:ok, nil}
 """
 ```
+
+For doctests to actually run, the corresponding test module must
+include `doctest OCSF.Ecto.Types.Inet`.
 
 ### 4.2 Indented code blocks (DB-backed calls)
 
