@@ -6,27 +6,34 @@ defmodule OCSF.Ecto.Migration.V1 do
   via `create_if_not_exists/1` and every index via
   `create_if_not_exists/1` so re-running `up/1` is safe.
 
+  > **v0 note:** `OCSF.Ecto.Migration` guards `:prefix` / `:table`
+  > to the default values, so V1 uses compile-time atoms rather
+  > than constructing them at runtime. Later versions that support
+  > overrides will take `opts` into account; the `@behaviour`
+  > signature stays identical.
+
   See `OCSF.Ecto.Migration` for the public entry point.
   """
 
   use Ecto.Migration
   @behaviour OCSF.Ecto.Migration.Version
 
+  @table :ocsf_event__logs
+
+  # Compile-time index names — one atom per entry, no runtime interpolation.
   @indexes [
-    {[:time], "time__idx"},
-    {[:user__uid], "user__uid__idx"},
-    {[:user__org__uid], "user__org__uid__idx"},
-    {[:class_uid, :activity_id], "class__idx"},
-    {[:type_uid], "type_uid__idx"},
-    {[:metadata__correlation_uid], "correlation_uid__idx"},
-    {[:metadata__trace_uid], "trace_uid__idx"}
+    {[:time], :ocsf_event__logs__time__idx},
+    {[:user__uid], :ocsf_event__logs__user__uid__idx},
+    {[:user__org__uid], :ocsf_event__logs__user__org__uid__idx},
+    {[:class_uid, :activity_id], :ocsf_event__logs__class__idx},
+    {[:type_uid], :ocsf_event__logs__type_uid__idx},
+    {[:metadata__correlation_uid], :ocsf_event__logs__correlation_uid__idx},
+    {[:metadata__trace_uid], :ocsf_event__logs__trace_uid__idx}
   ]
 
   @impl true
-  def up(%{prefix: prefix, table: base}) do
-    table_name = String.to_atom(prefix <> base)
-
-    create_if_not_exists table(table_name, primary_key: false) do
+  def up(_opts) do
+    create_if_not_exists table(@table, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :time, :utc_datetime_usec, null: false
 
@@ -69,18 +76,16 @@ defmodule OCSF.Ecto.Migration.V1 do
         default: fragment("now()")
     end
 
-    for {cols, suffix} <- @indexes do
-      create_if_not_exists index(table_name, cols, name: index_name(prefix, base, suffix))
+    for {cols, name} <- @indexes do
+      create_if_not_exists index(@table, cols, name: name)
     end
 
     :ok
   end
 
   @impl true
-  def down(%{prefix: prefix, table: base}) do
-    drop_if_exists table(String.to_atom(prefix <> base))
+  def down(_opts) do
+    drop_if_exists table(@table)
     :ok
   end
-
-  defp index_name(prefix, base, suffix), do: :"#{prefix}#{base}__#{suffix}"
 end
