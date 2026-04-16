@@ -43,6 +43,7 @@ defmodule OCSF.Ecto.MixProject do
       {:postgrex, "~> 0.19"},
       {:cloak_ecto, "~> 1.3"},
       {:jason, "~> 1.4"},
+      {:telemetry, "~> 1.0"},
 
       # test-only
       {:stream_data, "~> 1.0", only: [:test, :dev], runtime: false},

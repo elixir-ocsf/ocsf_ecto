@@ -23,6 +23,21 @@ defmodule OCSF.Ecto.Sink do
       OCSF.Ecto.Sink.write([event])
       #=> :ok
 
+  ## Telemetry
+
+  `write/1` wraps its work in `:telemetry.span/3`, emitting three
+  events under the `[:ocsf_ecto, :sink, :write]` prefix:
+
+  | Event                                      | Measurements          | Metadata                                        |
+  |--------------------------------------------|-----------------------|-------------------------------------------------|
+  | `[:ocsf_ecto, :sink, :write, :start]`      | `:monotonic_time`, `:system_time`     | `:count`, `:sink`                               |
+  | `[:ocsf_ecto, :sink, :write, :stop]`       | `:duration`, `:monotonic_time`        | `:count`, `:sink`, `:result` (`:ok \| :error`)  |
+  | `[:ocsf_ecto, :sink, :write, :exception]`  | `:duration`, `:monotonic_time`        | `:count`, `:sink`, `:kind`, `:reason`, `:stacktrace` |
+
+  Metadata intentionally excludes event payloads — batch `:count`
+  is a coarse observability signal; emitters should correlate with
+  the core `[:ocsf, :event, :new]` stream for per-event detail.
+
   See `OCSF.Ecto.Event`, `OCSF.Ecto.Repo`.
   """
 
@@ -49,6 +64,9 @@ defmodule OCSF.Ecto.Sink do
   Returns `:ok` when the insert succeeds (even if no new rows were
   written due to conflict), or `{:error, exception}` on failure.
 
+  Emits `:telemetry` events under `[:ocsf_ecto, :sink, :write]` —
+  see the module docs for the full event table.
+
   ## Examples
 
       {:ok, event} = OCSF.Events.Authentication.logon(user: %{uid: "u1"})
@@ -60,6 +78,19 @@ defmodule OCSF.Ecto.Sink do
   @impl true
   @spec write([OCSF.Event.t()]) :: :ok | {:error, term}
   def write(events) when is_list(events) do
+    start_metadata = %{count: length(events), sink: __MODULE__}
+
+    :telemetry.span(
+      [:ocsf_ecto, :sink, :write],
+      start_metadata,
+      fn ->
+        result = do_write(events)
+        {result, Map.put(start_metadata, :result, result_tag(result))}
+      end
+    )
+  end
+
+  defp do_write(events) do
     rows = Enum.map(events, &row_for/1)
 
     case Repo.insert_all(EctoEvent, rows, on_conflict: :nothing, conflict_target: :id) do
@@ -68,6 +99,9 @@ defmodule OCSF.Ecto.Sink do
   rescue
     error -> {:error, error}
   end
+
+  defp result_tag(:ok), do: :ok
+  defp result_tag({:error, _}), do: :error
 
   @doc """
   Projects an `%OCSF.Event{}` to the raw row map inserted by `write/1`.

@@ -181,6 +181,42 @@ case OCSF.Ecto.Sink.health() do
 end
 ```
 
+## Telemetry
+
+`OCSF.Ecto.Sink.write/1` emits `:telemetry` span events under the
+`[:ocsf_ecto, :sink, :write]` prefix:
+
+| Event                                      | Measurements                      | Metadata                                             |
+|--------------------------------------------|-----------------------------------|------------------------------------------------------|
+| `[:ocsf_ecto, :sink, :write, :start]`      | `:monotonic_time`, `:system_time` | `:count`, `:sink`                                    |
+| `[:ocsf_ecto, :sink, :write, :stop]`       | `:duration`, `:monotonic_time`    | `:count`, `:sink`, `:result` (`:ok` \| `:error`)     |
+| `[:ocsf_ecto, :sink, :write, :exception]`  | `:duration`, `:monotonic_time`    | `:count`, `:sink`, `:kind`, `:reason`, `:stacktrace` |
+
+Metadata is intentionally event-payload-free — batch `:count` is a
+coarse signal; correlate with the core `[:ocsf, :event, :new]`
+stream for per-event detail.
+
+Attach a module-based handler (never an anonymous function — the
+`:telemetry` library warns about performance):
+
+```elixir
+defmodule MyApp.OcsfSinkMetrics do
+  def handle_event([:ocsf_ecto, :sink, :write, :stop], %{duration: d}, meta, _config) do
+    :telemetry_metrics_prometheus.observe(
+      {:ocsf_sink_write_duration_ms, [result: meta.result]},
+      System.convert_time_unit(d, :native, :millisecond)
+    )
+  end
+end
+
+:telemetry.attach_many(
+  "ocsf-sink-metrics",
+  [[:ocsf_ecto, :sink, :write, :stop]],
+  &MyApp.OcsfSinkMetrics.handle_event/4,
+  nil
+)
+```
+
 ## Security notes
 
 - **Key management:** `CLOAK_KEY` must be provisioned out-of-band
