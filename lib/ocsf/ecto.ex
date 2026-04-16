@@ -19,6 +19,7 @@ defmodule OCSF.Ecto do
   |-------------------------------------|-----------------------------------------------|
   | `OCSF.Ecto.Sink`                    | `OCSF.Sink` implementation — write path       |
   | `OCSF.Ecto.Event`                   | Ecto schema for `ocsf_event__logs`            |
+  | `OCSF.Ecto.Migration`               | DDL packaging (Oban-style `up/down`)          |
   | `OCSF.Ecto.Repo`                    | Postgres `Ecto.Repo`                          |
   | `OCSF.Ecto.Vault`                   | Cloak vault (AES-GCM) for PII columns         |
   | `OCSF.Ecto.Types.EncryptedString`   | Cloak-backed Ecto type for `:contact` PII     |

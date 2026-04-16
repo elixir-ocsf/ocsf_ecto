@@ -17,7 +17,12 @@ defmodule OCSF.Ecto.MixProject do
       package: package(),
       docs: docs(),
       elixirc_paths: elixirc_paths(Mix.env()),
-      aliases: aliases()
+      aliases: aliases(),
+      test_coverage: [
+        # V_n modules are DDL-only; they're exercised end-to-end by
+        # `mix ecto.migrate` during the test alias, not by unit tests.
+        ignore_modules: [OCSF.Ecto.Migration.V1]
+      ]
     ]
   end
 

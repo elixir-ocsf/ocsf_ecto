@@ -69,18 +69,39 @@ and supervise `OCSF.Ecto.Repo` from your own tree.
 
 ## Schema setup
 
-The library ships a single migration at
-`priv/repo/migrations/*_create_ocsf_event_logs.exs`. Copy it into
-your app (or run against this Repo directly):
+The library ships its DDL as code via `OCSF.Ecto.Migration`
+(Oban-style). In your host app, generate a migration and delegate
+to it — this keeps the schema versioned across OCSF upgrades
+without forcing you to regenerate migration files.
 
 ```bash
-mix ecto.create
+mix ecto.gen.migration add_ocsf_events
+```
+
+```elixir
+# priv/repo/migrations/<ts>_add_ocsf_events.exs
+defmodule MyApp.Repo.Migrations.AddOcsfEvents do
+  use Ecto.Migration
+
+  def up,   do: OCSF.Ecto.Migration.up()
+  def down, do: OCSF.Ecto.Migration.down()
+end
+```
+
+```bash
 mix ecto.migrate
 ```
 
-See `priv/repo/migrations/` for the full DDL. Every column follows
-the `__` flat-projection naming; nullability mirrors OCSF 1.8
-required fields.
+When a new OCSF schema version lands, create a new migration file
+pinning the version:
+
+```elixir
+def up,   do: OCSF.Ecto.Migration.up(version: 2)
+def down, do: OCSF.Ecto.Migration.down(version: 2)
+```
+
+Full DDL contract: see SPEC §11. The module is idempotent
+(`create_if_not_exists`) so re-running `up/0` is safe.
 
 ## Writing events
 
