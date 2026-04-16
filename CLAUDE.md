@@ -26,20 +26,35 @@ Single table: `ocsf_event__logs`. Flat column projection using
 
 ## After every code change
 
-Always run this sequence before committing:
+Always run this sequence before committing — **and fix what it
+finds, don't just read the output**:
 
 ```bash
-mix format
-mix test --cover --raise    # 0 failures, 0 warnings, coverage >= 90%
+mix format                  # formatter must be clean
 mix audit                   # credo, dialyzer, doctor, sobelow, deps.audit, hex.audit
+mix test --cover --raise    # 0 failures, 0 warnings, coverage >= 90%
 ```
 
 `mix test` automatically runs `ecto.create --quiet` and
 `ecto.migrate --quiet` first (see `mix.exs` aliases), so you need
 a running Postgres instance on `localhost`.
 
-Fix all issues before committing. Never commit with warnings,
-failing tests, or audit failures.
+**`mix audit` — fix every issue it raises.** Credo warnings,
+dialyzer errors, doctor doc gaps, sobelow findings, unused deps,
+retired packages — all block the commit. If a check is a genuine
+false positive, scope it out in `.credo.exs` with a comment
+explaining why; do not silence without justification.
+
+**`mix test --cover` — fill the gap, don't just meet the floor.**
+Coverage aggregate must be ≥ 90%, but the goal is 100%. When a
+module drops below 90%, treat the uncovered lines as a bug
+(TESTING_GUIDELINES.md §9: "Coverage gaps are bugs"). Either add
+a test that exercises the branch, or — if the code is DDL-only
+and validated end-to-end via `mix ecto.migrate` — add an explicit
+`test_coverage: [ignore_modules: [...]]` entry in `mix.exs` with a
+comment explaining the exemption.
+
+Never commit with warnings, failing tests, or audit failures.
 
 ## Git conventions
 
