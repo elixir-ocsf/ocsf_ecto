@@ -77,4 +77,32 @@ defmodule OCSF.Ecto.MigrationTest do
       end
     end
   end
+
+  # resolve!/1 is the seam between opts validation and the final
+  # apply/3 glue. Covering it directly exercises resolve_version/1,
+  # version_module!/1, and resolve_opts!/1 without needing an
+  # Ecto.Migrator context (the happy-path apply/3 lands as a no-op
+  # glue line, validated end-to-end by `mix ecto.migrate`).
+  describe "resolve!/1" do
+    test "returns {V1, resolved_opts} for defaults" do
+      assert {OCSF.Ecto.Migration.V1, opts} = Migration.resolve!([])
+      assert opts == %{prefix: "ocsf_event__", table: "logs", schema: nil}
+    end
+
+    test "returns {V1, resolved_opts} when :version is pinned" do
+      assert {OCSF.Ecto.Migration.V1, _} = Migration.resolve!(version: 1)
+    end
+
+    test "raises on invalid :version" do
+      assert_raise ArgumentError, ~r/invalid :version/, fn ->
+        Migration.resolve!(version: 0)
+      end
+    end
+
+    test "raises on override options" do
+      assert_raise ArgumentError, ~r/not supported yet/, fn ->
+        Migration.resolve!(prefix: "custom__")
+      end
+    end
+  end
 end

@@ -107,13 +107,20 @@ defmodule OCSF.Ecto.Migration do
   @spec versions() :: [pos_integer]
   def versions, do: Enum.to_list(1..@current_version)
 
-  # -- internals --
-
-  defp dispatch(opts, direction) do
+  @doc false
+  @spec resolve!(opts) :: {module, OCSF.Ecto.Migration.Version.opts()}
+  def resolve!(opts) do
     version = resolve_version(Keyword.get(opts, :version, :current))
     module = version_module!(version)
     resolved = resolve_opts!(opts)
 
+    {module, resolved}
+  end
+
+  # -- internals --
+
+  defp dispatch(opts, direction) do
+    {module, resolved} = resolve!(opts)
     apply(module, direction, [resolved])
   end
 
