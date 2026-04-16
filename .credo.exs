@@ -152,6 +152,7 @@
                  [:Sink],
                  [:Repo],
                  [:SinkTest],
+                 [:SinkRepoOverrideTest],
                  [:EventTest]
                ],
                files: %{excluded: ["test/test_helper.exs"]}},

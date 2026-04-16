@@ -141,6 +141,16 @@ defmodule OCSF.Ecto.SinkTest do
     end
   end
 
+  describe "repo/0" do
+    # Override-path testing requires Application.put_env, which is
+    # global state and would race with other async: true tests that
+    # call Sink.repo/0 via write/1 or health/0. Covered by a
+    # dedicated async: false case in sink_repo_override_test.exs.
+    test "returns OCSF.Ecto.Repo by default" do
+      assert Sink.repo() == OCSF.Ecto.Repo
+    end
+  end
+
   describe "health/0" do
     test "returns :ok when repo responds" do
       assert Sink.health() == :ok

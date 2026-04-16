@@ -9,6 +9,13 @@ defmodule OCSF.Ecto.Sink do
 
   ## Configuration
 
+      # Optional — swap the Repo if you want the sink to write
+      # through your host app's Repo instead of the bundled
+      # OCSF.Ecto.Repo. Defaults to OCSF.Ecto.Repo.
+      config :ocsf_ecto, repo: MyApp.Repo
+
+      # Policy applied to every write. Optional — defaults to
+      # allow PII / deny :network.
       config :ocsf_ecto, OCSF.Ecto.Sink,
         policy: %OCSF.Policy{
           allow: [:identifier, :tenant, :taxonomic, :temporal,
@@ -42,9 +49,10 @@ defmodule OCSF.Ecto.Sink do
   """
 
   alias OCSF.Ecto.Event, as: EctoEvent
-  alias OCSF.Ecto.Repo
 
   @behaviour OCSF.Sink
+
+  @default_repo OCSF.Ecto.Repo
 
   @default_policy %OCSF.Policy{
     allow: [:identifier, :tenant, :taxonomic, :temporal, :contact, :identity],
@@ -93,7 +101,7 @@ defmodule OCSF.Ecto.Sink do
   defp do_write(events) do
     rows = Enum.map(events, &row_for/1)
 
-    case Repo.insert_all(EctoEvent, rows, on_conflict: :nothing, conflict_target: :id) do
+    case repo().insert_all(EctoEvent, rows, on_conflict: :nothing, conflict_target: :id) do
       {_count, _} -> :ok
     end
   rescue
@@ -192,13 +200,28 @@ defmodule OCSF.Ecto.Sink do
   @impl true
   @spec health() :: OCSF.Sink.health()
   def health do
-    case Repo.query("SELECT 1") do
+    case repo().query("SELECT 1") do
       {:ok, _} -> :ok
       {:error, reason} -> {:down, reason}
     end
   rescue
     error -> {:down, error}
   end
+
+  @doc """
+  Returns the `Ecto.Repo` module the sink writes through.
+
+  Resolved from `config :ocsf_ecto, :repo` at call time, so host
+  apps can point the sink at their own Repo without touching the
+  library. Defaults to `OCSF.Ecto.Repo`.
+
+  ## Examples
+
+      OCSF.Ecto.Sink.repo()
+      #=> OCSF.Ecto.Repo
+  """
+  @spec repo() :: module
+  def repo, do: Application.get_env(:ocsf_ecto, :repo, @default_repo)
 
   defp get_in_safe(nil, _path), do: nil
 

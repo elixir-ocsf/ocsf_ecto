@@ -32,6 +32,16 @@ end
 
 ## Configuration
 
+The library ships with its own `OCSF.Ecto.Repo` and
+`OCSF.Ecto.Vault`, which are started automatically by
+`OCSF.Ecto.Application`. Two setup paths are supported:
+
+### A. Quickstart — use the bundled Repo
+
+Point `OCSF.Ecto.Repo` at a Postgres instance and configure the
+Cloak vault. Fine for prototyping or small apps where the OCSF
+table lives in its own database.
+
 ```elixir
 # config/config.exs
 config :ocsf_ecto, OCSF.Ecto.Repo,
@@ -55,17 +65,52 @@ config :ocsf_ecto, OCSF.Ecto.Vault,
   ]
 ```
 
-### Running inside a host app with its own Repo
+### B. Host app — use your own Repo
 
-`OCSF.Ecto.Application` starts `OCSF.Ecto.Repo` under its own
-supervision tree by default. If your host app already owns a Repo
-(or runs migrations separately), disable the library's Repo boot:
+Recommended for production apps that already own an `Ecto.Repo`.
+The sink resolves its Repo at call time from
+`config :ocsf_ecto, :repo`, so you point it at your app's Repo
+without any code in the library.
+
+**1. Stop the bundled Repo from booting.** Ecto honours this via
+the Repo's init callback — no supervision-tree surgery needed:
 
 ```elixir
+# config/config.exs
 config :ocsf_ecto, OCSF.Ecto.Repo, start: false
 ```
 
-and supervise `OCSF.Ecto.Repo` from your own tree.
+**2. Tell the sink which Repo to use.**
+
+```elixir
+config :ocsf_ecto, repo: MyApp.Repo
+```
+
+**3. Configure the Cloak vault the same way as the Quickstart.**
+The vault is independent of the Repo and must be running for
+encrypted PII columns to round-trip. It's small (single GenServer)
+and can stay supervised by `OCSF.Ecto.Application` — no action
+needed beyond providing the cipher config.
+
+**4. Use `OCSF.Ecto.Event` with your Repo.** The Ecto schema is
+Repo-agnostic:
+
+```elixir
+import Ecto.Query
+
+OCSF.Ecto.Event
+|> where([e], e.class_uid == 3002)
+|> MyApp.Repo.all()
+```
+
+That's it — `OCSF.Ecto.Sink.write/1`, `.health/0`,
+`OCSF.Ecto.Migration.up/1`, and queries via `OCSF.Ecto.Event` all
+flow through `MyApp.Repo` once the two config lines are set.
+
+> **Limitation:** `:ocsf_ecto, :repo` is a single global module per
+> VM — one sink, one Repo. Per-instance sinks (multiple Repos in
+> the same app) are not supported in v0. Track the discussion in
+> SPEC §11 if you hit that requirement.
 
 ## Schema setup
 
