@@ -22,4 +22,20 @@ defmodule OCSF.Ecto.SinkRepoOverrideTest do
       assert Sink.repo() == OCSF.Ecto.Repo
     end
   end
+
+  describe "OCSF.Ecto.Repo.init/2 honouring :start, false" do
+    test "returns :ignore when start: false is set" do
+      assert OCSF.Ecto.Repo.init(:supervisor, start: false) == :ignore
+    end
+
+    test "returns {:ok, config} by default" do
+      assert {:ok, [database: "foo"]} =
+               OCSF.Ecto.Repo.init(:supervisor, database: "foo")
+    end
+
+    test "returns {:ok, config} when start: true is explicit" do
+      assert {:ok, [start: true, database: "bar"]} =
+               OCSF.Ecto.Repo.init(:supervisor, start: true, database: "bar")
+    end
+  end
 end
