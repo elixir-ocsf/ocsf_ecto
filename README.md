@@ -18,6 +18,13 @@ data classes) and policy-driven redaction applied before insert.
 - **Policy-driven redaction** — denied data classes become `nil`
   columns before insert.
 
+> **Buffered emission:** `OCSF.Ecto.Sink.write/1` is a synchronous bulk
+> insert. For non-blocking, batched, back-pressured emission on a hot
+> path (and per-tenant isolation), put
+> [`ocsf_ingest`](https://hex.pm/packages/ocsf_ingest) in front of this
+> sink — its README is the end-to-end adoption guide. Call `write/1`
+> directly only for low-volume or one-off writes.
+
 ## Installation
 
 ```elixir
