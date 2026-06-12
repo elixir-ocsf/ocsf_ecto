@@ -46,6 +46,10 @@ defmodule OCSF.Ecto.MixProject do
       {:telemetry, "~> 1.0"},
 
       # test-only
+      # ocsf_ingest is used only to prove the end-to-end pipeline writes through
+      # this sink (integration test). The dependency direction is one-way:
+      # ocsf_ingest never depends on a sink.
+      {:ocsf_ingest, path: "../ocsf_ingest", only: :test},
       {:stream_data, "~> 1.0", only: [:test, :dev], runtime: false},
       {:benchee, "~> 1.3", only: :dev, runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
@@ -86,7 +90,7 @@ defmodule OCSF.Ecto.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       audit: [
         "credo --strict",
-        "deps.audit",
+        "deps.audit --ignore-file .mix_audit.ignore",
         "deps.unlock --check-unused",
         "dialyzer --format github",
         "doctor --raise",

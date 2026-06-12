@@ -1,0 +1,13 @@
+# Advisories ignored by `mix deps.audit` (wired via the :audit alias in mix.exs).
+# One advisory ID per line. Lines starting with `#` are comments.
+#
+# GHSA-rhv4-8758-jx7v — Decimal: unbounded exponent in `Decimal.new` enables
+# unauthenticated DoS. Patched in decimal 3.0.0.
+#
+# Not exploitable here: `ocsf_ecto` persists OCSF events whose columns are only
+# uuid / string / integer / inet / jsonb / timestamp — there is no Decimal
+# field, and the library never calls `Decimal.new` on untrusted input. `decimal`
+# is a transitive dependency of `ecto`/`postgrex` (numeric DB types we do not
+# use). The fix (3.0.0) is unreachable while `ecto` caps decimal at `~> 2.0`.
+# Revisit when ecto widens its constraint.
+GHSA-rhv4-8758-jx7v

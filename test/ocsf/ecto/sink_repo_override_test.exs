@@ -4,6 +4,7 @@ defmodule OCSF.Ecto.SinkRepoOverrideTest do
   # Sink.repo/0 caller in an async: true suite.
   use ExUnit.Case, async: false
 
+  alias OCSF.Ecto.Repo
   alias OCSF.Ecto.Sink
 
   describe "repo/0 override via :ocsf_ecto, :repo" do
@@ -19,23 +20,22 @@ defmodule OCSF.Ecto.SinkRepoOverrideTest do
 
     test "falls back to OCSF.Ecto.Repo when unset" do
       Application.delete_env(:ocsf_ecto, :repo)
-      assert Sink.repo() == OCSF.Ecto.Repo
+      assert Sink.repo() == Repo
     end
   end
 
   describe "OCSF.Ecto.Repo.init/2 honouring :start, false" do
     test "returns :ignore when start: false is set" do
-      assert OCSF.Ecto.Repo.init(:supervisor, start: false) == :ignore
+      assert Repo.init(:supervisor, start: false) == :ignore
     end
 
     test "returns {:ok, config} by default" do
-      assert {:ok, [database: "foo"]} =
-               OCSF.Ecto.Repo.init(:supervisor, database: "foo")
+      assert {:ok, [database: "foo"]} = Repo.init(:supervisor, database: "foo")
     end
 
     test "returns {:ok, config} when start: true is explicit" do
       assert {:ok, [start: true, database: "bar"]} =
-               OCSF.Ecto.Repo.init(:supervisor, start: true, database: "bar")
+               Repo.init(:supervisor, start: true, database: "bar")
     end
   end
 end
