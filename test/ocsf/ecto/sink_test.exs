@@ -65,7 +65,7 @@ defmodule OCSF.Ecto.SinkTest do
 
       [row] = Repo.all(EctoEvent)
       assert row.metadata__uid == event.metadata.uid
-      assert row.metadata__version == "1.8.0"
+      assert row.metadata__version == OCSF.version()
       assert row.metadata__product__name == "Cryptr Auth" or row.metadata__product__name == nil
     end
   end

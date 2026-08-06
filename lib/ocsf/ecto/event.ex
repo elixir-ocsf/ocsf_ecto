@@ -10,9 +10,10 @@ defmodule OCSF.Ecto.Event do
   the objects it embeds (`metadata`, `user`, `http_request`,
   `src_endpoint`, `dst_endpoint`, `service`).
 
-  The schema itself is declarative and has no public functions —
-  writes are performed by `OCSF.Ecto.Sink.write/1` via
-  `Ecto.Repo.insert_all/3`.
+  Writes are performed by `OCSF.Ecto.Sink.write/1` via
+  `Ecto.Repo.insert_all/3`. Reads back to canonical OCSF JSON via
+  `to_ocsf_map/1` (and the `Jason.Encoder` implementation built on it),
+  which reconstructs the nested event from the flat columns.
 
   ## Primary key
 
@@ -23,11 +24,11 @@ defmodule OCSF.Ecto.Event do
 
   ## Encrypted columns
 
-  The following columns use `OCSF.Ecto.Types.EncryptedString` and
-  are encrypted at rest via Cloak:
+  The following columns are encrypted at rest via Cloak:
 
-  - `user__name` (`:contact` / `:identity` classes)
-  - `user__email_addr` (`:contact` / `:identity` classes)
+  - `user__name`, `user__email_addr` — `OCSF.Ecto.Types.EncryptedString`
+  - `actor`, `updated_user`, `entity` — `OCSF.Ecto.Types.EncryptedMap`
+    (PII-bearing sub-objects, stored as encrypted JSON)
 
   ## Custom types
 
@@ -40,7 +41,7 @@ defmodule OCSF.Ecto.Event do
 
   use Ecto.Schema
 
-  alias OCSF.Ecto.Types.EncryptedString
+  alias OCSF.Ecto.Types.{EncryptedMap, EncryptedString, Json}
 
   @primary_key {:id, :binary_id, autogenerate: false}
   @foreign_key_type :binary_id
@@ -88,9 +89,86 @@ defmodule OCSF.Ecto.Event do
     # service
     field :service__name, :string
 
+    # completeness — non-PII sub-objects (v2, jsonb)
+    field :iam_role, Json
+    field :updated_role, Json
+    field :group, Json
+    field :api, Json
+
+    # completeness — list-valued fields (v2, jsonb)
+    field :groups, Json
+    field :iam_roles, Json
+    field :privileges, Json
+    field :resources, Json
+    field :metadata__profiles, Json
+
+    # completeness — PII sub-objects (v2, Cloak-encrypted jsonb)
+    field :actor, EncryptedMap
+    field :updated_user, EncryptedMap
+    field :entity, EncryptedMap
+
+    # raw payload (v2)
+    field :raw_data, :string
+
     # extension
     field :unmapped, :map, default: %{}
 
     timestamps(updated_at: false, inserted_at: :inserted_at, type: :utc_datetime_usec)
+  end
+
+  # Columns that are storage-only, not part of the OCSF event body.
+  @non_ocsf_columns [:id, :inserted_at]
+
+  # Inet columns are loaded as Erlang IP tuples; format them to their
+  # string form so the reconstructed map matches OCSF serializer output.
+  @ip_columns [:src_endpoint__ip, :dst_endpoint__ip]
+
+  @doc """
+  Reconstruct the canonical nested OCSF event map from a stored row.
+
+  Un-flattens the `__`-joined columns (and splices the `jsonb`
+  sub-object / list columns at their nested path), then re-derives the
+  OCSF label fields (`class_name`, `severity`, …) by round-tripping
+  through `OCSF.Deserializer.from_map/1` and `OCSF.to_map/1`. The result
+  is schema-conformant OCSF 1.9 JSON.
+
+  If the stored row cannot be deserialized into a valid `%OCSF.Event{}`
+  (e.g. a class whose required field was not persisted), it falls back
+  to the structurally-reconstructed map — still valid JSON, without the
+  re-derived labels.
+
+  PII sub-objects (`actor`, `updated_user`, `entity`) are decrypted from
+  their `EncryptedMap` columns and spliced back in transparently.
+  """
+  @spec to_ocsf_map(t()) :: map
+  def to_ocsf_map(%__MODULE__{} = row) do
+    nested =
+      row
+      |> Map.from_struct()
+      |> Map.drop([:__meta__ | @non_ocsf_columns])
+      |> Enum.reduce(%{}, fn {field, value}, acc ->
+        case normalize(field, value) do
+          nil -> acc
+          normalized -> Map.put(acc, Atom.to_string(field), normalized)
+        end
+      end)
+      |> OCSF.Flatten.unflatten()
+
+    case OCSF.Deserializer.from_map(nested) do
+      {:ok, event} -> OCSF.to_map(event)
+      {:error, _reason} -> nested
+    end
+  end
+
+  defp normalize(field, ip) when field in @ip_columns and is_tuple(ip), do: format_ip(ip)
+
+  defp normalize(_field, value) when value == %{}, do: nil
+  defp normalize(_field, value), do: value
+
+  defp format_ip(tuple) do
+    case :inet.ntoa(tuple) do
+      {:error, _} -> nil
+      chars -> to_string(chars)
+    end
   end
 end
