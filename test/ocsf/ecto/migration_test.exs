@@ -84,13 +84,14 @@ defmodule OCSF.Ecto.MigrationTest do
   # Ecto.Migrator context (the happy-path apply/3 lands as a no-op
   # glue line, validated end-to-end by `mix ecto.migrate`).
   describe "resolve!/1" do
-    test "returns {V1, resolved_opts} for defaults" do
-      assert {OCSF.Ecto.Migration.V1, opts} = Migration.resolve!([])
+    test "returns {V_current, resolved_opts} for defaults" do
+      assert {OCSF.Ecto.Migration.V2, opts} = Migration.resolve!([])
       assert opts == %{prefix: "ocsf_event__", table: "logs", schema: nil}
     end
 
-    test "returns {V1, resolved_opts} when :version is pinned" do
+    test "returns the pinned version's module" do
       assert {OCSF.Ecto.Migration.V1, _} = Migration.resolve!(version: 1)
+      assert {OCSF.Ecto.Migration.V2, _} = Migration.resolve!(version: 2)
     end
 
     test "raises on invalid :version" do

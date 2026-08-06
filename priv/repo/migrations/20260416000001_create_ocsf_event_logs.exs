@@ -5,6 +5,6 @@ defmodule OCSF.Ecto.Repo.Migrations.CreateOcsfEventLogs do
   # OCSF.Ecto.Migration.up/down (see SPEC §11.3).
   use Ecto.Migration
 
-  def up, do: OCSF.Ecto.Migration.up()
-  def down, do: OCSF.Ecto.Migration.down()
+  def up, do: OCSF.Ecto.Migration.up(version: 1)
+  def down, do: OCSF.Ecto.Migration.down(version: 1)
 end

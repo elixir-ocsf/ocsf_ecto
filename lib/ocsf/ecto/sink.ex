@@ -134,6 +134,10 @@ defmodule OCSF.Ecto.Sink do
     redacted = OCSF.Policy.apply(policy(), event)
     now = DateTime.utc_now()
 
+    # Serialized (label-rich, OCSF-shaped) view of the redacted event —
+    # source for the completeness `jsonb` columns so the row round-trips.
+    serialized = OCSF.to_map(redacted)
+
     %{
       id: redacted.metadata.uid,
       time: redacted.time,
@@ -163,6 +167,22 @@ defmodule OCSF.Ecto.Sink do
       dst_endpoint__ip: get_in_safe(redacted, [:dst_endpoint, :ip]),
       dst_endpoint__hostname: get_in_safe(redacted, [:dst_endpoint, :hostname]),
       service__name: get_in_safe(redacted, [:service, :name]),
+      # completeness columns (v2) — non-PII sub-objects and lists, taken
+      # from the serialized view so they store OCSF-shaped jsonb.
+      iam_role: serialized[:iam_role],
+      updated_role: serialized[:updated_role],
+      group: serialized[:group],
+      api: serialized[:api],
+      groups: serialized[:groups],
+      iam_roles: serialized[:iam_roles],
+      privileges: serialized[:privileges],
+      resources: serialized[:resources],
+      metadata__profiles: get_in(serialized, [:metadata, :profiles]),
+      # PII sub-objects — encrypted at rest via EncryptedMap.
+      actor: serialized[:actor],
+      updated_user: serialized[:updated_user],
+      entity: serialized[:entity],
+      raw_data: redacted.raw_data,
       unmapped: redacted.unmapped || %{},
       inserted_at: now
     }
