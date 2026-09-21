@@ -10,7 +10,7 @@ defmodule OCSF.Ecto.Types.Inet do
 
   Used by `OCSF.Ecto.Event` on `src_endpoint__ip` and
   `dst_endpoint__ip`. Corresponds to the OCSF
-  [`ip_t`](https://schema.ocsf.io/1.8.0/data_types/ip_t) data type.
+  [`ip_t`](https://schema.ocsf.io/1.9.0/data_types/ip_t) data type.
 
   ## Accepted cast inputs
 

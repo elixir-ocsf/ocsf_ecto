@@ -53,7 +53,7 @@ defmodule OCSF.Ecto.EventTest do
       id: uid,
       time: DateTime.utc_now(),
       metadata__uid: uid,
-      metadata__version: "1.8.0",
+      metadata__version: OCSF.version(),
       category_uid: 3,
       class_uid: 3002,
       type_uid: 300_201,

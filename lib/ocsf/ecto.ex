@@ -10,7 +10,7 @@ defmodule OCSF.Ecto do
   becomes `user__email_addr`).
 
   Corresponds to persistence for the OCSF
-  [Base Event](https://schema.ocsf.io/1.8.0/classes/base_event) and
+  [Base Event](https://schema.ocsf.io/1.9.0/classes/base_event) and
   its embedded objects.
 
   ## Module map

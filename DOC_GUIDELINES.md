@@ -108,7 +108,7 @@ Use `##` for top-level sections inside `@moduledoc`:
 ## OCSF mapping
 
 This schema is the flat projection of the OCSF
-[Authentication](https://schema.ocsf.io/1.8.0/classes/authentication)
+[Authentication](https://schema.ocsf.io/1.9.0/classes/authentication)
 class and its embedded objects. See SPEC §6 for the naming
 convention.
 
@@ -307,7 +307,7 @@ concept, and to Ecto/Cloak for third-party types:
 
 ```elixir
 Corresponds to the OCSF
-[Authentication](https://schema.ocsf.io/1.8.0/classes/authentication)
+[Authentication](https://schema.ocsf.io/1.9.0/classes/authentication)
 class (UID 3002).
 
 Wraps `Cloak.Ecto.Binary` — see the
@@ -353,7 +353,7 @@ defmodule OCSF.Ecto.Event do
   convention (SPEC §6). PII columns use
   `OCSF.Ecto.Types.EncryptedString` (Cloak-backed). See
   `OCSF.Ecto.Sink` for the write path and
-  [OCSF Event](https://schema.ocsf.io/1.8.0/classes/base_event)
+  [OCSF Event](https://schema.ocsf.io/1.9.0/classes/base_event)
   for the canonical nested shape.
 
   ## Encrypted columns

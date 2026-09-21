@@ -124,8 +124,7 @@ defmodule OCSF.Ecto.EventJsonConformanceTest do
         iam_role: %{name: "admin", uid: "role-1"},
         updated_role: %{name: "auditor", uid: "role-9"},
         privileges: ["policy:write", "policy:read"],
-        resources: ["arn:res:1", "arn:res:2"],
-        service: %{name: "iam"},
+        resources: [%{uid: "arn:res:1", type: "bucket"}, %{uid: "arn:res:2", type: "bucket"}],
         severity: :Informational,
         status: :Success,
         metadata: %{product: %{name: "cryptr"}}

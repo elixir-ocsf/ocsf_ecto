@@ -41,8 +41,7 @@ defmodule OCSF.Ecto.EventJsonTest do
         iam_role: %{name: "admin", uid: "role-1"},
         updated_role: %{name: "auditor", uid: "role-9"},
         privileges: ["policy:write"],
-        resources: ["arn:res:1", "arn:res:2"],
-        service: %{name: "iam"},
+        resources: [%{uid: "arn:res:1", type: "bucket"}, %{uid: "arn:res:2", type: "bucket"}],
         severity: :Informational,
         status: :Success,
         metadata: %{product: %{name: "cryptr"}}
@@ -99,7 +98,9 @@ defmodule OCSF.Ecto.EventJsonTest do
       assert encoded["iam_role"]["name"] == "admin"
       assert encoded["updated_role"]["name"] == "auditor"
       assert encoded["privileges"] == ["policy:write"]
-      assert encoded["resources"] == ["arn:res:1", "arn:res:2"]
+
+      assert [%{"uid" => "arn:res:1", "type" => "bucket"}, %{"uid" => "arn:res:2"}] =
+               encoded["resources"]
     end
   end
 
