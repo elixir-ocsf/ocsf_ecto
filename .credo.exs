@@ -154,6 +154,8 @@
                  [:SinkTest],
                  [:SinkRepoOverrideTest],
                  [:EventTest],
+                 [:EventJsonTest],
+                 [:EventJsonConformanceTest],
                  [:IngestIntegrationTest]
                ],
                files: %{excluded: ["test/test_helper.exs"]}},

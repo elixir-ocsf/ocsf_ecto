@@ -242,7 +242,7 @@ defmodule OCSF.Ecto.EventJsonConformanceTest do
       entity_bytes = raw_column(entity.metadata.uid, "entity")
 
       for bytes <- [actor_bytes, updated_user_bytes, entity_bytes] do
-        assert is_binary(bytes)
+        assert byte_size(bytes) > 0
       end
 
       # None of the PII appears in cleartext in the raw column bytes.

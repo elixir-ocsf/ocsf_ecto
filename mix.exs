@@ -21,7 +21,7 @@ defmodule OCSF.Ecto.MixProject do
       test_coverage: [
         # V_n modules are DDL-only; they're exercised end-to-end by
         # `mix ecto.migrate` during the test alias, not by unit tests.
-        ignore_modules: [OCSF.Ecto.Migration.V1]
+        ignore_modules: [OCSF.Ecto.Migration.V1, OCSF.Ecto.Migration.V2]
       ]
     ]
   end
@@ -38,7 +38,8 @@ defmodule OCSF.Ecto.MixProject do
 
   defp deps do
     [
-      {:ocsf, "~> 0.2"},
+      # override: ocsf_ingest (test-only path dep) points at ../ocsf; keep the Hex release here.
+      {:ocsf, "~> 0.2", override: true},
       {:ecto_sql, "~> 3.12"},
       {:postgrex, "~> 0.19"},
       {:cloak_ecto, "~> 1.3"},

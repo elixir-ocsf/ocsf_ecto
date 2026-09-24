@@ -61,7 +61,7 @@ defmodule OCSF.Ecto.EventJsonTest do
     test "reconstructs the event losslessly across classes" do
       for event <- [user_event(), role_event()] do
         row = store_and_load(event)
-        refute is_nil(row)
+        assert %EctoEvent{} = row
 
         # The redacted event is what the sink stored; encoding the row must
         # equal its canonical OCSF JSON — proving lossless reconstruction
@@ -116,7 +116,7 @@ defmodule OCSF.Ecto.EventJsonTest do
           Ecto.UUID.dump!(event.metadata.uid)
         ])
 
-      assert is_binary(actor_bytes)
+      assert byte_size(actor_bytes) > 0
       refute actor_bytes =~ "bob@acme.co"
       refute actor_bytes =~ "actor-1"
 
