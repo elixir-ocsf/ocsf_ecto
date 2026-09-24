@@ -31,7 +31,7 @@ data classes) and policy-driven redaction applied before insert.
 # mix.exs
 def deps do
   [
-    {:ocsf, "~> 0.1"},
+    {:ocsf, "~> 0.2"},
     {:ocsf_ecto, "~> 0.1"}
   ]
 end

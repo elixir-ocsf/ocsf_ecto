@@ -38,7 +38,7 @@ defmodule OCSF.Ecto.MixProject do
 
   defp deps do
     [
-      {:ocsf, path: "../ocsf"},
+      {:ocsf, "~> 0.2"},
       {:ecto_sql, "~> 3.12"},
       {:postgrex, "~> 0.19"},
       {:cloak_ecto, "~> 1.3"},
