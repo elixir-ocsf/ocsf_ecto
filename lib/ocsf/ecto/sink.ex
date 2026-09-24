@@ -26,7 +26,8 @@ defmodule OCSF.Ecto.Sink do
 
   ## Example
 
-      {:ok, event} = OCSF.Events.Authentication.logon(user: %{uid: "u1"})
+      {:ok, event} =
+        OCSF.Events.Authentication.logon(user: %{uid: "u1"}, service: %{name: "auth"})
       OCSF.Ecto.Sink.write([event])
       #=> :ok
 
@@ -77,7 +78,8 @@ defmodule OCSF.Ecto.Sink do
 
   ## Examples
 
-      {:ok, event} = OCSF.Events.Authentication.logon(user: %{uid: "u1"})
+      {:ok, event} =
+        OCSF.Events.Authentication.logon(user: %{uid: "u1"}, service: %{name: "auth"})
       :ok = OCSF.Ecto.Sink.write([event])
 
       # Replay is idempotent on metadata.uid
@@ -121,7 +123,8 @@ defmodule OCSF.Ecto.Sink do
 
   ## Examples
 
-      {:ok, event} = OCSF.Events.Authentication.logon(user: %{uid: "u1"})
+      {:ok, event} =
+        OCSF.Events.Authentication.logon(user: %{uid: "u1"}, service: %{name: "auth"})
       row = OCSF.Ecto.Sink.row_for(event)
       row.class_uid
       #=> 3002

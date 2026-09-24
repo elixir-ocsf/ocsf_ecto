@@ -387,7 +387,7 @@ test "persists metadata fields" do
 
   [row] = Repo.all(EctoEvent)
   assert row.metadata__uid == event.metadata.uid
-  assert row.metadata__version == "1.8.0"
+  assert row.metadata__version == OCSF.version()
 end
 ```
 

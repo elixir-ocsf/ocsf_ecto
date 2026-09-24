@@ -6,7 +6,7 @@ defmodule OCSF.Ecto.Event do
   segment separator (SPEC §6): nested paths like `metadata.product.name`
   become single columns (`metadata__product__name`). Corresponds to
   the OCSF
-  [Base Event](https://schema.ocsf.io/1.8.0/classes/base_event) and
+  [Base Event](https://schema.ocsf.io/1.9.0/classes/base_event) and
   the objects it embeds (`metadata`, `user`, `http_request`,
   `src_endpoint`, `dst_endpoint`, `service`).
 

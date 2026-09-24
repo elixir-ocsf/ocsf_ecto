@@ -285,7 +285,7 @@ end
 ## Links
 
 - [`ocsf`](https://hex.pm/packages/ocsf) — core library
-- [OCSF 1.8 Schema](https://schema.ocsf.io/1.8.0/)
+- [OCSF 1.9 Schema](https://schema.ocsf.io/1.9.0/)
 - [Cloak](https://hex.pm/packages/cloak_ecto) — field-level encryption
 - [Ecto](https://hex.pm/packages/ecto_sql) — persistence layer
 
