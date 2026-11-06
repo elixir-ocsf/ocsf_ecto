@@ -1,7 +1,7 @@
 defmodule OCSF.Ecto.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.2.1"
   @source_url "https://github.com/elixir-ocsf/ocsf_ecto"
 
   def project do
@@ -39,7 +39,8 @@ defmodule OCSF.Ecto.MixProject do
   defp deps do
     [
       {:ocsf, "~> 0.2"},
-      {:ecto_sql, "~> 3.12"},
+      {:ecto, "~> 3.14 and >= 3.14.3"},
+      {:ecto_sql, "~> 3.14"},
       {:postgrex, "~> 0.19"},
       {:cloak_ecto, "~> 1.3"},
       {:jason, "~> 1.4"},
